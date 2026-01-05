@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<title>Warehouse Demo</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f2f4f7;
+    padding: 20px;
+}
+
+h1, h2 {
+    color: #2c3e50;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+.card {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background: #2c3e50;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.result {
+    margin-top: 15px;
+    background: #ecf0f1;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+table, th, td {
+    border: 1px solid #ccc;
+}
+
+th, td {
+    padding: 8px;
+    text-align: center;
+}
+
+.invoice {
+    border: 2px dashed #555;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+@media print {
+    button { display: none; }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>📦 گودام اسٹاک و فروخت سسٹم (Warehouse Demo)</h1>
+
+<!-- PURCHASE -->
+<div class="card">
+<h2>1️⃣ خریداری (Purchase)</h2>
+
+<label>خریدا گیا وزن (Kg)</label>
+<input id="pKg" type="number" value="100">
+
+<label>ریٹ فی کلو (Rate / Kg)</label>
+<input id="pRate" type="number" value="120">
+
+<button onclick="addPurchase()">خرید شامل کریں</button>
+<div class="result" id="purchaseInfo"></div>
+</div>
+
+<!-- REFINEMENT -->
+<div class="card">
+<h2>2️⃣ ریفائننگ (Refining)</h2>
+
+<label>ریفائننگ سے پہلے وزن</label>
+<input id="rawKg" type="number" value="100">
+
+<label>ریفائننگ کے بعد وزن</label>
+<input id="refinedKg" type="number" value="95">
+
+<button onclick="refine()">ریفائن کریں</button>
+<div class="result" id="refineInfo"></div>
+</div>
+
+<!-- SALE -->
+<div class="card">
+<h2>3️⃣ فروخت (Sale)</h2>
+
+<label>فروخت کا طریقہ</label>
+<select id="saleMode">
+    <option value="weight">وزن کے حساب سے</option>
+    <option value="bag">بوریاں گن کر</option>
+</select>
+
+<label>بوریاں (Bags)</label>
+<input id="bags" type="number" value="50">
+
+<label>فی بوری وزن</label>
+<input id="bagWeight" type="number" value="40">
+
+<label>ترازو کا وزن</label>
+<input id="scaleWeight" type="number" value="1980">
+
+<label>فروخت ریٹ (Rate / Kg)</label>
+<input id="saleRate" type="number" value="150">
+
+<label>بل نمبر (Physical Bill No)</label>
+<input id="billNo" value="A-1025">
+
+<button onclick="makeSale()">فروخت کریں</button>
+<button onclick="printInvoice()">انوائس پرنٹ کریں</button>
+
+<div class="result" id="saleInfo"></div>
+
+<div class="invoice" id="invoiceArea" style="display:none">
+<h3>🧾 فروخت رسید (Invoice)</h3>
+<p id="invoiceText"></p>
+</div>
+</div>
+
+<!-- LEDGERS -->
+<div class="card">
+<h2>4️⃣ کھاتہ (Ledger)</h2>
+
+<h3>📕 کسٹمر کھاتہ</h3>
+<table>
+<tr><th>تفصیل</th><th>جمع</th><th>بقایا</th></tr>
+<tbody id="customerLedger"></tbody>
+</table>
+
+<h3>📘 وینڈر کھاتہ</h3>
+<table>
+<tr><th>تفصیل</th><th>جمع</th><th>بقایا</th></tr>
+<tbody id="vendorLedger"></tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+let totalKg = 0;
+let totalCost = 0;
+let customerBalance = 0;
+let vendorBalance = 0;
+
+function addPurchase() {
+    let kg = +pKg.value;
+    let rate = +pRate.value;
+    let cost = kg * rate;
+
+    totalKg += kg;
+    totalCost += cost;
+    vendorBalance += cost;
+
+    purchaseInfo.innerHTML =
+        `کل وزن: ${totalKg} Kg<br>
+         کل لاگت: PKR ${totalCost}<br>
+         اوسط ریٹ: PKR ${(totalCost/totalKg).toFixed(2)} / Kg`;
+
+    vendorLedger.innerHTML +=
+        `<tr><td>خریداری</td><td>${cost}</td><td>${vendorBalance}</td></tr>`;
+}
+
+function refine() {
+    let loss = rawKg.value - refinedKg.value;
+    refineInfo.innerHTML =
+        `ریفائنڈ وزن: ${refinedKg.value} Kg<br>
+         وزن میں کمی: ${loss} Kg`;
+}
+
+function makeSale() {
+    let mode = saleMode.value;
+    let billedKg = (mode === "weight") ? +scaleWeight.value : +bags.value * +bagWeight.value;
+    let saleAmount = billedKg * +saleRate.value;
+
+    customerBalance += saleAmount;
+
+    saleInfo.innerHTML =
+        `بل شدہ وزن: ${billedKg} Kg<br>
+         رقم: PKR ${saleAmount}`;
+
+    customerLedger.innerHTML +=
+        `<tr><td>فروخت</td><td>${saleAmount}</td><td>${customerBalance}</td></tr>`;
+
+    invoiceText.innerHTML =
+        `بل نمبر: ${billNo.value}<br>
+         وزن: ${billedKg} Kg<br>
+         رقم: PKR ${saleAmount}<br>
+         طریقہ: ${mode === "weight" ? "وزن" : "بوریاں"}`;
+}
+
+function printInvoice() {
+    invoiceArea.style.display = "block";
+    window.print();
+}
+</script>
+
+</body>
+</html>
